@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Palindrome Checker</title>
+  <style>
+    :root {
+      --bg: #0f172a;        /* slate-900 */
+      --card: #111827;      /* gray-900 */
+      --muted: #94a3b8;     /* slate-400 */
+      --text: #e5e7eb;      /* gray-200 */
+      --accent: #38bdf8;    /* sky-400 */
+      --ok: #34d399;        /* green-400 */
+      --bad: #f87171;       /* red-400 */
+      --ring: rgba(56,189,248,.4);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(60rem 60rem at 10% 10%, #0b1220, var(--bg)), linear-gradient(180deg, #0b1220 0%, #0d1324 100%);
+      color: var(--text); display: grid; place-items: center; padding: 24px;
+    }
+    .card { width: 100%; max-width: 720px; background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+      border: 1px solid #1f2937; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.35); overflow: hidden; }
+    .header { padding: 22px 22px 10px; border-bottom: 1px solid #1f2937; }
+    h1 { margin: 0; font-size: 1.4rem; letter-spacing: .3px; }
+    p.sub { margin: 6px 0 0; color: var(--muted); font-size: .95rem; }
+
+    .content { padding: 22px; display: grid; gap: 16px; }
+
+    .mode-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .segmented {
+      display: inline-grid; grid-auto-flow: column; border: 1px solid #1f2937; border-radius: 12px; overflow: hidden;
+      background: #0b1220; box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    .segmented button {
+      background: transparent; color: var(--muted); border: none; padding: 10px 14px; cursor: pointer; font-weight: 600;
+    }
+    .segmented button.active { color: var(--text); background: rgba(56,189,248,.08); outline: 1px solid rgba(56,189,248,.25); }
+
+    label { font-weight: 600; color: var(--text); font-size: .95rem; }
+    .field { display: grid; gap: 8px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #1f2937; background: #0a1020; color: var(--text);
+      outline: none; transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { padding: 10px 14px; border-radius: 12px; border: 1px solid #1f2937; background: #0a1020; color: var(--text);
+      cursor: pointer; font-weight: 700; letter-spacing: .2px; }
+    .btn.primary { background: linear-gradient(180deg, #0ea5e9, #0284c7); border-color: #0ea5e9; }
+    .btn.ghost { background: rgba(255,255,255,.02); }
+    .btn:active { transform: translateY(1px); }
+
+    .result { padding: 14px; border-radius: 14px; border: 1px dashed #1f2937; background: #0a1222; display: grid; gap: 6px; }
+    .result .line { display: flex; align-items: center; justify-content: space-between; }
+    .pill { padding: 4px 10px; border-radius: 999px; font-size: .85rem; font-weight: 700; }
+    .pill.ok { background: rgba(52,211,153,.15); color: var(--ok); border: 1px solid rgba(52,211,153,.4); }
+    .pill.bad { background: rgba(248,113,113,.15); color: var(--bad); border: 1px solid rgba(248,113,113,.4); }
+
+    .history { margin-top: 6px; border-top: 1px solid #1f2937; padding-top: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 6px; font-size: .92rem; color: var(--muted); }
+    th { color: var(--text); font-weight: 700; }
+    tr:not(:first-child) td { border-top: 1px solid #1f2937; }
+
+    .hint { color: var(--muted); font-size: .9rem; }
+    .footer { padding: 12px 22px 20px; color: var(--muted); font-size: .85rem; border-top: 1px solid #1f2937; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    code.inline { background: #0a1020; padding: 2px 6px; border-radius: 6px; border: 1px solid #1f2937; }
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <div class="header">
+      <h1>Palindrome Checker</h1>
+      <p class="sub">Reverse numbers or text and check if they read same forwards & backwards.</p>
+    </div>
+
+    <div class="content">
+      <div class="mode-row">
+        <label for="mode">Mode:</label>
+        <div class="segmented" role="tablist" aria-label="Input mode">
+          <button id="mode-number" class="active" role="tab" aria-selected="true">Number</button>
+          <button id="mode-text" role="tab" aria-selected="false">Text</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label id="inputLabel" for="userInput">Enter a number</label>
+        <input id="userInput" type="number" inputmode="numeric" placeholder="e.g., 121" aria-labelledby="inputLabel" />
+        <span class="hint" id="hint">Tip: Press Enter to check palindrome.</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="btnCheck">Check Palindrome</button>
+        <button class="btn ghost" id="btnReverse">Reverse</button>
+        <button class="btn ghost" id="btnClear">Clear</button>
+      </div>
+
+      <div class="result" aria-live="polite" id="resultBox" hidden>
+        <div class="line"><span>Reversed:</span> <strong id="revOut">—</strong></div>
+        <div class="line"><span>Palindrome?</span> <span id="palOut" class="pill">—</span></div>
+      </div>
+
+      <section class="history" aria-label="History">
+        <h2 style="margin:0 0 6px;font-size:1rem">History</h2>
+        <table aria-describedby="histDesc">
+          <caption id="histDesc" style="display:none">Past checks showing input, reversed value and palindrome result.</caption>
+          <thead>
+            <tr><th style="width:40%">Input</th><th style="width:40%">Reversed</th><th style="width:20%">Palindrome</th></tr>
+          </thead>
+          <tbody id="histBody">
+            <!-- rows go here -->
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+
+  <script>
+    // --- Core Logic ---
+    function reverseNumber(n) {
+      let temp = Math.abs(n);
+      let rev = 0;
+      while (temp > 0) {
+        const digit = temp % 10;
+        rev = rev * 10 + digit;
+        temp = Math.floor(temp / 10);
+      }
+      // Preserve sign if needed (optional for this app)
+      return n < 0 ? -rev : rev;
+    }
+
+    function isNumberPalindrome(n) {
+      if (!Number.isFinite(n) || n < 0) return false; // only non-negative integers here
+      return n === reverseNumber(n);
+    }
+
+    function normalizeText(s) {
+      return (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function reverseText(s) {
+      return [...s].reverse().join("");
+    }
+
+    function isTextPalindrome(s) {
+      const norm = normalizeText(s);
+      return norm.length > 0 && norm === reverseText(norm);
+    }
+
+    // --- UI Wiring ---
+    const modeBtnNumber = document.getElementById('mode-number');
+    const modeBtnText = document.getElementById('mode-text');
+    const input = document.getElementById('userInput');
+    const inputLabel = document.getElementById('inputLabel');
+    const hint = document.getElementById('hint');
+    const btnCheck = document.getElementById('btnCheck');
+    const btnReverse = document.getElementById('btnReverse');
+    const btnClear = document.getElementById('btnClear');
+    const resultBox = document.getElementById('resultBox');
+    const revOut = document.getElementById('revOut');
+    const palOut = document.getElementById('palOut');
+    const histBody = document.getElementById('histBody');
+
+    let currentMode = 'number';
+
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'number') {
+        modeBtnNumber.classList.add('active');
+        modeBtnNumber.setAttribute('aria-selected','true');
+        modeBtnText.classList.remove('active');
+        modeBtnText.setAttribute('aria-selected','false');
+        input.type = 'number';
+        input.value = '';
+        input.placeholder = 'e.g., 121';
+        inputLabel.textContent = 'Enter a number';
+        hint.textContent = 'Tip: Only non-negative integers are supported.';
+      } else {
+        modeBtnText.classList.add('active');
+        modeBtnText.setAttribute('aria-selected','true');
+        modeBtnNumber.classList.remove('active');
+        modeBtnNumber.setAttribute('aria-selected','false');
+        input.type = 'text';
+        input.value = '';
+        input.placeholder = 'e.g., racecar or A man, a plan, a canal: Panama!';
+        inputLabel.textContent = 'Enter text';
+        hint.textContent = 'Non-letters/digits are ignored for palindrome check.';
+      }
+      resultBox.hidden = true;
+      input.focus();
+    }
+
+    modeBtnNumber.addEventListener('click', () => setMode('number'));
+    modeBtnText.addEventListener('click', () => setMode('text'));
+
+    function showResult(reversed, isPal) {
+      revOut.textContent = String(reversed);
+      palOut.textContent = isPal ? 'YES' : 'NO';
+      palOut.className = 'pill ' + (isPal ? 'ok' : 'bad');
+      resultBox.hidden = false;
+    }
+
+    function addHistoryRow(inputVal, reversedVal, isPal) {
+      const tr = document.createElement('tr');
+      const td1 = document.createElement('td');
+      const td2 = document.createElement('td');
+      const td3 = document.createElement('td');
+      td1.textContent = inputVal;
+      td2.textContent = reversedVal;
+      td3.innerHTML = isPal ? '<span class="pill ok">YES</span>' : '<span class="pill bad">NO</span>';
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      histBody.prepend(tr);
+    }
+
+    function handleCheck() {
+      const raw = input.value;
+      if (currentMode === 'number') {
+        if (raw.trim() === '') { input.focus(); return; }
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n < 0) {
+          alert('Please enter a non-negative whole number.');
+          input.focus();
+          return;
+        }
+        const reversed = reverseNumber(n);
+        const pal = isNumberPalindrome(n);
+        showResult(reversed, pal);
+        addHistoryRow(n, reversed, pal);
+      } else {
+        const s = raw;
+        if (!s || s.trim() === '') { input.focus(); return; }
+        const norm = normalizeText(s);
+        const reversed = reverseText(norm);
+        const pal = isTextPalindrome(s);
+        showResult(reversed, pal);
+        addHistoryRow(s, reversed, pal);
+      }
+    }
+
+    function handleReverseOnly() {
+      const raw = input.value;
+      if (currentMode === 'number') {
+        if (raw.trim() === '') { input.focus(); return; }
+        const n = Number(raw);
+        if (!Number.isInteger(n)) { alert('Enter a whole number.'); return; }
+        showResult(reverseNumber(n), false);
+      } else {
+        const s = raw || '';
+        const norm = normalizeText(s);
+        showResult(reverseText(norm), false);
+      }
+    }
+
+    btnCheck.addEventListener('click', handleCheck);
+    btnReverse.addEventListener('click', handleReverseOnly);
+    btnClear.addEventListener('click', () => {
+      input.value = '';
+      resultBox.hidden = true;
+      input.focus();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleCheck();
+    });
+
+    // init focus
+    input.focus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Preference Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Light Theme */
+        body.light {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #2d3748;
+        }
+
+        /* Dark Theme */
+        body.dark {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #e2e8f0;
+        }
+
+        /* Pastel Theme */
+        body.pastel {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #4a5568;
+        }
+
+        /* Ocean Theme */
+        body.ocean {
+            background: linear-gradient(135deg, #0093e9 0%, #80d0c7 100%);
+            color: #1a365d;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        body.dark .container {
+            background: rgba(45, 55, 72, 0.95);
+        }
+
+        body.pastel .container {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        body.ocean .container {
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .settings-group {
+            margin-bottom: 30px;
+        }
+
+        .settings-label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .theme-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .theme-btn {
+            padding: 15px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: #f7fafc;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        body.dark .theme-btn {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+
+        .theme-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .theme-btn.active {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        body.dark .theme-btn.active {
+            border-color: #667eea;
+            background: #4a5568;
+        }
+
+        .font-size-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .font-size-control input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+        }
+
+        body.dark .font-size-control input[type="range"] {
+            background: #4a5568;
+        }
+
+        .font-size-value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e0;
+            border-radius: 30px;
+            transition: 0.3s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: #667eea;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .reset-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #c6f6d5;
+            color: #22543d;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-message.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="light">
+    <div class="container">
+        <h1>⚙️ Theme Preferences</h1>
+
+        <div class="settings-group">
+            <label class="settings-label">Theme Style</label>
+            <div class="theme-options">
+                <button class="theme-btn active" data-theme="light">☀️ Light</button>
+                <button class="theme-btn" data-theme="dark">🌙 Dark</button>
+                <button class="theme-btn" data-theme="pastel">🎨 Pastel</button>
+                <button class="theme-btn" data-theme="ocean">🌊 Ocean</button>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <label class="settings-label">Font Size</label>
+            <div class="font-size-control">
+                <input type="range" id="fontSizeSlider" min="12" max="24" value="16">
+                <span class="font-size-value"><span id="fontSizeDisplay">16</span>px</span>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="setting-row">
+                <label class="settings-label">Animations</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="animationsToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-row">
+                <label class="settings-label">Reduce Motion</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="reduceMotionToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <button class="reset-btn" id="resetBtn">Reset to Defaults</button>
+
+        <div class="status-message" id="statusMessage">
+            Settings saved! ✓
+        </div>
+    </div>
+
+    <script>
+        // Default settings
+        const DEFAULT_SETTINGS = {
+            theme: 'light',
+            fontSize: 16,
+            animations: true,
+            reduceMotion: false
+        };
+
+        // Load settings on page load
+        async function loadSettings() {
+            try {
+                const result = await window.storage.get('userPreferences');
+                if (result && result.value) {
+                    return JSON.parse(result.value);
+                }
+            } catch (error) {
+                console.log('No saved settings found, using defaults');
+            }
+            return DEFAULT_SETTINGS;
+        }
+
+        // Save settings
+        async function saveSettings(settings) {
+            try {
+                await window.storage.set('userPreferences', JSON.stringify(settings));
+                showStatusMessage();
+            } catch (error) {
+                console.error('Error saving settings:', error);
+            }
+        }
+
+        // Apply settings to the page
+        function applySettings(settings) {
+            // Apply theme
+            document.body.className = settings.theme;
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === settings.theme);
+            });
+
+            // Apply font size
+            document.body.style.fontSize = settings.fontSize + 'px';
+            document.getElementById('fontSizeSlider').value = settings.fontSize;
+            document.getElementById('fontSizeDisplay').textContent = settings.fontSize;
+
+            // Apply animations
+            document.getElementById('animationsToggle').checked = settings.animations;
+            if (!settings.animations) {
+                document.body.style.setProperty('--transition-speed', '0s');
+            } else {
+                document.body.style.removeProperty('--transition-speed');
+            }
+
+            // Apply reduce motion
+            document.getElementById('reduceMotionToggle').checked = settings.reduceMotion;
+            if (settings.reduceMotion) {
+                document.querySelectorAll('*').forEach(el => {
+                    el.style.animation = 'none';
+                });
+            }
+        }
+
+        // Show status message
+        function showStatusMessage() {
+            const msg = document.getElementById('statusMessage');
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 2000);
+        }
+
+        // Initialize
+        let currentSettings = { ...DEFAULT_SETTINGS };
+
+        loadSettings().then(settings => {
+            currentSettings = settings;
+            applySettings(currentSettings);
+        });
+
+        // Theme button handlers
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                currentSettings.theme = btn.dataset.theme;
+                applySettings(currentSettings);
+                await saveSettings(currentSettings);
+            });
+        });
+
+        // Font size handler
+        document.getElementById('fontSizeSlider').addEventListener('input', async (e) => {
+            currentSettings.fontSize = parseInt(e.target.value);
+            applySettings(currentSettings);
+            await saveSettings(currentSettings);
+        });
+
+        // Animations toggle handler
+        document.getElementById('animationsToggle').addEventListener('change', async (e) => {
+            currentSettings.animations = e.target.checked;
+            applySettings(currentSettings);
+            await saveSettings(currentSettings);
+        });
+
+        // Reduce motion toggle handler
+        document.getElementById('reduceMotionToggle').addEventListener('change', async (e) => {
+            currentSettings.reduceMotion = e.target.checked;
+            applySettings(currentSettings);
+            await saveSettings(currentSettings);
+        });
+
+        // Reset button handler
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            currentSettings = { ...DEFAULT_SETTINGS };
+            applySettings(currentSettings);
+            await saveSettings(currentSettings);
+        });
+    </script>
+</body>
+</html>

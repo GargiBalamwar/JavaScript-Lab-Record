@@ -1,0 +1,295 @@
+0<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Email Validate • Vowel Count • Reverse Paragraph</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#f5e8ff;      /* lavender tint */
+      --bg2:#e8d6ff;      /* soft lilac */
+      --ink:#2b2142;      /* deep indigo */
+      --ink-weak:#5a4a78;
+      --accent:#7b2cbf;   /* purple */
+      --accent-2:#9d4edd; /* brighter purple */
+      --ok:#188a42;
+      --bad:#c1121f;
+      --card-bg: rgba(255,255,255,.6);
+      --muted:#f3effa;
+      --shadow: 0 12px 30px rgba(93, 46, 148, .18);
+      --radius:16px;
+    }
+
+    *{ box-sizing: border-box }
+    html,body{ height:100% }
+
+    body{
+      margin:0;
+      font-family:"Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      background: radial-gradient(1200px 800px at 15% 10%, var(--bg2), transparent 60%),
+                  radial-gradient(1200px 800px at 85% 90%, #f0dcff, transparent 60%),
+                  linear-gradient(180deg, #fff, var(--bg1));
+      display:grid;
+      place-items:center;
+      padding:32px;
+    }
+
+    .app{
+      width:min(920px, 100%);
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    header{
+      padding:28px 28px 0;
+    }
+    .title{
+      display:flex; align-items:center; gap:.6rem;
+      font-weight:700; font-size: clamp(20px, 2.6vw, 28px);
+      color: var(--accent);
+      letter-spacing:.2px;
+      text-shadow: 0 2px 10px rgba(157,78,221,.18);
+    }
+    .subtitle{
+      margin:.35rem 0 1.25rem; color:var(--ink-weak); font-size:14px;
+    }
+
+    .content{
+      padding: 0 28px 28px;
+      display:grid; gap:22px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 860px){
+      .content{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .card{
+      background:#ffffffc2;
+      border:1px solid #eee6ff;
+      border-radius:14px;
+      padding:18px;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .card:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(123,44,191,.15);
+      border-color:#e6d7ff;
+    }
+
+    h2{
+      margin:0 0 10px; font-size:18px; color:#5a189a;
+      display:flex; align-items:center; gap:.5rem;
+    }
+    h2 .badge{
+      font-size:12px; background: #efe5ff; color:#6436b3;
+      padding:.15rem .45rem; border-radius:999px; border:1px solid #e1d5ff;
+    }
+
+    .row{ display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; }
+
+    input, textarea{
+      width:100%;
+      font:inherit;
+      padding:.75rem .9rem;
+      background:#fff;
+      color:var(--ink);
+      border:1.6px solid #e8ddff;
+      border-radius:10px;
+      outline:none;
+      transition:border-color .2s ease, box-shadow .2s ease, transform .1s ease;
+    }
+    input:focus, textarea:focus{
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 4px rgba(157,78,221,.15);
+    }
+
+    textarea{ height:160px; resize: vertical; }
+
+    button{
+      padding:.7rem 1rem;
+      font:inherit; font-weight:600;
+      border:1.6px solid transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:#fff;
+      border-radius:10px;
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .2s ease, filter .2s ease;
+      box-shadow: 0 8px 18px rgba(123,44,191,.25);
+    }
+    button:hover{ filter: brightness(1.08) }
+    button:active{ transform: translateY(1px) }
+
+    .btn-ghost{
+      background:#f1e6ff;
+      color:#4b0082;
+      border-color:#e2d5ff;
+      box-shadow:none;
+    }
+    .btn-ghost:hover{ filter:none; box-shadow: 0 6px 14px rgba(123,44,191,.18) }
+
+    .out{
+      margin-top:.7rem;
+      padding:.8rem .9rem;
+      background: var(--muted);
+      border:1px solid #e8ddff;
+      border-radius:10px;
+      white-space:pre-wrap;
+      min-height: 48px;
+      line-height:1.55;
+    }
+
+    .ok{ color:var(--ok); font-weight:700 }
+    .bad{ color:var(--bad); font-weight:700 }
+
+    code{
+      background:#efe9ff; padding:.12rem .36rem; border-radius:6px;
+      border:1px solid #e4d6ff;
+    }
+
+    .hint{ font-size:12px; color:#6b5a89; margin-top:.35rem }
+
+    /* Animated shimmer underline for section separators */
+    .sep{
+      height:3px; border-radius:999px; margin:14px 0 8px;
+      background: linear-gradient(90deg, transparent, #cbb2ff, #9d4edd, #cbb2ff, transparent);
+      background-size: 200% 100%;
+      animation: slide 3s linear infinite;
+    }
+    @keyframes slide{ to{ background-position: -200% 0 } }
+
+    /* Real-time email state */
+    .is-valid{ border-color:#21a366 !important; box-shadow: 0 0 0 4px rgba(33,163,102,.15) }
+    .is-invalid{ border-color:#e5383b !important; box-shadow: 0 0 0 4px rgba(229,56,59,.12) }
+  </style>
+</head>
+<body>
+  <main class="app" role="main" aria-label="Utility app">
+    <header>
+      <div class="title"> Email • Vowels • Reverse</div>
+      
+    </header>
+
+    <div class="content">
+      <!-- Email -->
+      <section class="card" aria-labelledby="email-title">
+        <h2 id="email-title">1) Validate an email & extract parts <span class="badge">Regex</span></h2>
+        <div class="sep" aria-hidden="true"></div>
+        <div class="row" style="margin:.4rem 0 .6rem">
+          <input id="email" type="email" placeholder="e.g. alex.jones+news@sub.example.co.uk" aria-describedby="email-hint"/>
+          <button id="btnValidate" onclick="validateEmail()">Validate</button>
+          <button class="btn-ghost" onclick="clearEmail()">Clear</button>
+        </div>
+        <div id="emailOut" class="out" aria-live="polite"></div>
+        <div id="email-hint" class="hint">Pattern: <code>/^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\\.)+([A-Za-z]{2,})$/</code></div>
+      </section>
+
+      <!-- Text -->
+      <section class="card" aria-labelledby="text-title">
+        <h2 id="text-title">2) Count vowels & reverse paragraph <span class="badge">Text</span></h2>
+        <div class="sep" aria-hidden="true"></div>
+        <textarea id="para" placeholder="Paste or type a paragraph here…"></textarea>
+        <div class="row" style="margin-top:.6rem">
+          <button onclick="countVowels()">Count vowels</button>
+          <button class="btn-ghost" onclick="reverseParagraph()">Reverse paragraph</button>
+          <button class="btn-ghost" onclick="clearText()">Clear</button>
+        </div>
+        <div id="textOut" class="out" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Practical email regex (not RFC-perfect, but good for most cases)
+    const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)+([A-Za-z]{2,})$/;
+
+    const emailInput = document.getElementById('email');
+    const emailOut = document.getElementById('emailOut');
+
+    function validateEmail() {
+      const value = (emailInput.value || '').trim();
+
+      if (!value) {
+        emailOut.innerHTML = '<span class="bad">Please enter an email.</span>';
+        emailInput.classList.remove('is-valid','is-invalid');
+        return;
+      }
+
+      const match = value.match(EMAIL_REGEX);
+      if (!match) {
+        emailOut.innerHTML = `<span class="bad">Invalid email.</span>\nTried pattern: <code>${EMAIL_REGEX}</code>`;
+        emailInput.classList.add('is-invalid');
+        emailInput.classList.remove('is-valid');
+        return;
+      }
+
+      const [localPart, domainFull] = value.split('@');
+      const domainPieces = domainFull.split('.');
+      const tld = domainPieces.at(-1);
+      const sld = domainPieces.at(-2) || '';
+      const rootDomain = sld ? `${sld}.${tld}` : domainFull;
+      const subdomain = domainPieces.slice(0, -2).join('.') || '(none)';
+
+      emailOut.innerHTML =
+        `<span class="ok">Valid email ✔</span>
+Full: ${value}
+Local part (user): ${localPart}
+Domain: ${domainFull}
+Subdomain: ${subdomain}
+Root domain: ${rootDomain}
+TLD: ${tld}`;
+
+      emailInput.classList.add('is-valid');
+      emailInput.classList.remove('is-invalid');
+    }
+
+    function clearEmail(){
+      emailInput.value = '';
+      emailInput.classList.remove('is-valid','is-invalid');
+      emailOut.textContent = '';
+      emailInput.focus();
+    }
+
+    function countVowels() {
+      const text = (document.getElementById('para').value || '');
+      const vowels = text.match(/[aeiou]/gi);
+      const count = vowels ? vowels.length : 0;
+      document.getElementById('textOut').textContent = `Vowel count: ${count}`;
+    }
+
+    function reverseParagraph() {
+      const area = document.getElementById('para');
+      const reversed = area.value.split('').reverse().join('');
+      area.value = reversed;
+      document.getElementById('textOut').textContent = 'Paragraph reversed.';
+    }
+
+    function clearText(){
+      const area = document.getElementById('para');
+      area.value = '';
+      document.getElementById('textOut').textContent = '';
+      area.focus();
+    }
+
+    // Live validation feedback as user types
+    emailInput?.addEventListener('input', () => {
+      const value = emailInput.value.trim();
+      if (!value){ emailInput.classList.remove('is-valid','is-invalid'); emailOut.textContent=''; return; }
+      if (EMAIL_REGEX.test(value)){
+        emailInput.classList.add('is-valid');
+        emailInput.classList.remove('is-invalid');
+      } else {
+        emailInput.classList.add('is-invalid');
+        emailInput.classList.remove('is-valid');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi‑Subject Marks Analyzer (CC • CN • DC)</title>
+<style>
+  :root{--bg:#0f172a;--panel:#0b1220;--muted:#94a3b8;--text:#e5e7eb;--ring:rgba(56,189,248,.35);--accent:#38bdf8;--ok:#34d399;--warn:#f59e0b;--bad:#ef4444}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(70rem 70rem at 10% 5%,#0b1220,var(--bg));color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;display:grid;place-items:start;padding:20px}
+  .container{width:min(1200px,100%);margin-inline:auto;display:grid;gap:16px}
+  h1{margin:0 0 6px;font-size:1.8rem}
+  .sub{margin:0 0 12px;color:var(--muted)}
+  .panel{background:linear-gradient(180deg,#0f172a,#0a0f1f);border:1px solid #1f2937;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  input,select{background:#0a1020;border:1px solid #1f2937;border-radius:12px;color:var(--text);padding:10px 12px;outline:none}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+  .btn{background:#0a1020;border:1px solid #1f2937;border-radius:12px;color:var(--text);padding:10px 12px;font-weight:700;cursor:pointer}
+  .btn.primary{background:linear-gradient(180deg,#0ea5e9,#0284c7);border-color:#0ea5e9}
+  .btn.ok{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.4)}
+  .btn.warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4)}
+  .btn.bad{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4)}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-top:1px solid #1f2937;text-align:left}
+  th{color:#cbd5e1;cursor:pointer;user-select:none}
+  .muted{color:var(--muted)}
+  .pill{padding:3px 8px;border-radius:999px;font-weight:700;font-size:.8rem}
+  .pill.ok{color:var(--ok);border:1px solid rgba(52,211,153,.45);background:rgba(52,211,153,.12)}
+  .pill.bad{color:var(--bad);border:1px solid rgba(239,68,68,.45);background:rgba(239,68,68,.12)}
+  .grid{display:grid;gap:12px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:900px){.stats{grid-template-columns:1fr}}
+  .stat{display:grid;gap:4px;background:#0a1020;border:1px solid #1f2937;border-radius:12px;padding:12px}
+  .stat b{font-size:1.2rem}
+  code.inline{background:#0a1020;border:1px solid #1f2937;border-radius:6px;padding:2px 6px}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Multi‑Subject Marks Analyzer</h1>
+    <p class="sub">Subjects: <b>Compiler Construction (CC)</b>, <b>Computer Network (CN)</b>, <b>Data Compression (DC)</b>. Use arrays, loops, and map/filter/reduce to analyze results.</p>
+  </header>
+
+  <!-- Input panel -->
+  <section class="panel grid">
+    <div class="row">
+      <div class="grid" style="min-width:180px">
+        <label for="name">Name</label>
+        <select id="name">
+          <option>Gargi</option>
+          <option>Aarya</option>
+          <option>Karan</option>
+          <option>Jay</option>
+          <option>Krish</option>
+        </select>
+      </div>
+      <div class="grid" style="min-width:140px"><label for="cc">CC</label><input id="cc" type="number" placeholder="0-100"></div>
+      <div class="grid" style="min-width:140px"><label for="cn">CN</label><input id="cn" type="number" placeholder="0-100"></div>
+      <div class="grid" style="min-width:140px"><label for="dc">DC</label><input id="dc" type="number" placeholder="0-100"></div>
+      <button class="btn primary" id="save">Save / Update</button>
+      <button class="btn" id="reset">Reset Sample</button>
+    </div>
+    <p class="muted">Tip: Select a row to edit. Passing mark = 40 in each subject.</p>
+  </section>
+
+  <!-- Table -->
+  <section class="panel">
+    <h3 style="margin-top:0">Roster</h3>
+    <table>
+      <thead>
+        <tr>
+          <th data-key="name">Name ▲▼</th>
+          <th data-key="CC">CC</th>
+          <th data-key="CN">CN</th>
+          <th data-key="DC">DC</th>
+          <th data-key="total">Total</th>
+          <th data-key="avg">Avg</th>
+          <th>Result</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="filterPassAll">filter(): Passed ALL</button>
+      <button class="btn" id="clearFilter">Clear Filter</button>
+      <button class="btn bad" id="deleteSelected">Delete Selected</button>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="panel grid">
+    <h3 style="margin:0">Class Stats</h3>
+    <div class="stats">
+      <div class="stat"><span class="muted">Count</span><b id="stCount">0</b></div>
+      <div class="stat"><span class="muted">Topper (Total)</span><b id="stTopper">—</b><span class="muted" id="stTopperScore"></span></div>
+      <div class="stat"><span class="muted">Lowest (Total)</span><b id="stLowest">—</b><span class="muted" id="stLowestScore"></span></div>
+      <div class="stat"><span class="muted">CC Avg</span><b id="avgCC">—</b></div>
+      <div class="stat"><span class="muted">CN Avg</span><b id="avgCN">—</b></div>
+      <div class="stat"><span class="muted">DC Avg</span><b id="avgDC">—</b></div>
+      <div class="stat"><span class="muted">CC Topper</span><b id="topCC">—</b></div>
+      <div class="stat"><span class="muted">CN Topper</span><b id="topCN">—</b></div>
+      <div class="stat"><span class="muted">DC Topper</span><b id="topDC">—</b></div>
+    </div>
+    
+  </section>
+
+</div>
+
+<script>
+// ======================= Data Model =======================
+let students = [
+  { name: 'Gargi', CC: 85, CN: 78, DC: 90 },
+  { name: 'Aarya', CC: 66, CN: 74, DC: 81 },
+  { name: 'Karan', CC: 92, CN: 88, DC: 80 },
+  { name: 'Jay',   CC: 55, CN: 60, DC: 58 },
+  { name: 'Krish', CC: 70, CN: 65, DC: 72 }
+];
+
+const PASS = 40;
+const $ = (id)=>document.getElementById(id);
+let filtered = null; // if set, show this list instead of students
+let sortKey = 'name'; let sortDir = 1; // 1 asc, -1 desc
+
+function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+function totalOf(s){ return s.CC + s.CN + s.DC; }
+function avgOf(s){ return totalOf(s)/3; }
+function passPill(s){
+  const ok = s.CC>=PASS && s.CN>=PASS && s.DC>=PASS;
+  return ok ? '<span class="pill ok">PASS</span>' : '<span class="pill bad">FAIL</span>';
+}
+
+function getWorkingList(){ return filtered ?? students; }
+
+// ======================= Rendering =======================
+function renderTable(){
+  const tbody = $('tbody');
+  tbody.innerHTML = '';
+  const list = [...getWorkingList()].sort((a,b)=>{
+    const va = sortKey==='total'?totalOf(a): sortKey==='avg'?avgOf(a): a[sortKey];
+    const vb = sortKey==='total'?totalOf(b): sortKey==='avg'?avgOf(b): b[sortKey];
+    if(va<vb) return -1*sortDir; if(va>vb) return 1*sortDir; return 0;
+  });
+  list.forEach((s,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="radio" name="sel" data-name="${s.name}"> ${s.name}</td>
+      <td>${s.CC}</td>
+      <td>${s.CN}</td>
+      <td>${s.DC}</td>
+      <td>${totalOf(s)}</td>
+      <td>${avgOf(s).toFixed(2)}</td>
+      <td>${passPill(s)}</td>
+      <td>
+        <button class="btn ok" data-action="edit" data-name="${s.name}">Edit</button>
+        <button class="btn bad" data-action="delete" data-name="${s.name}">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  updateStats();
+}
+
+function updateStats(){
+  const list = getWorkingList();
+  $('stCount').textContent = list.length;
+  if(!list.length){
+    ['stTopper','stTopperScore','stLowest','stLowestScore','avgCC','avgCN','avgDC','topCC','topCN','topDC'].forEach(id=>$ (id).textContent='—');
+    return;
+  }
+  // reduce totals for averages
+  const {sumCC,sumCN,sumDC} = list.reduce((acc,s)=>({
+    sumCC: acc.sumCC + s.CC,
+    sumCN: acc.sumCN + s.CN,
+    sumDC: acc.sumDC + s.DC
+  }), {sumCC:0,sumCN:0,sumDC:0});
+  $('avgCC').textContent = (sumCC/list.length).toFixed(2);
+  $('avgCN').textContent = (sumCN/list.length).toFixed(2);
+  $('avgDC').textContent = (sumDC/list.length).toFixed(2);
+
+  // topper & lowest by total (loop demo)
+  let top = null, low = null;
+  for(const s of list){
+    if(top===null || totalOf(s) > totalOf(top)) top = s;
+    if(low===null || totalOf(s) < totalOf(low)) low = s;
+  }
+  $('stTopper').textContent = top.name; $('stTopperScore').textContent = 'Total: '+totalOf(top);
+  $('stLowest').textContent = low.name; $('stLowestScore').textContent = 'Total: '+totalOf(low);
+
+  // subject toppers (map + reduce)
+  const topCC = list.reduce((a,b)=> (a==null || b.CC>a.CC)? b: a, null);
+  const topCN = list.reduce((a,b)=> (a==null || b.CN>a.CN)? b: a, null);
+  const topDC = list.reduce((a,b)=> (a==null || b.DC>a.DC)? b: a, null);
+  $('topCC').textContent = `${topCC.name} (${topCC.CC})`;
+  $('topCN').textContent = `${topCN.name} (${topCN.CN})`;
+  $('topDC').textContent = `${topDC.name} (${topDC.DC})`;
+}
+
+// ======================= Interactions =======================
+function findByName(name){ return students.find(s=>s.name===name); }
+
+$('save').addEventListener('click', ()=>{
+  const name = $('name').value;
+  const cc = clamp(Math.round(Number($('cc').value)),0,100);
+  const cn = clamp(Math.round(Number($('cn').value)),0,100);
+  const dc = clamp(Math.round(Number($('dc').value)),0,100);
+  if(!Number.isFinite(cc) || !Number.isFinite(cn) || !Number.isFinite(dc)){
+    alert('Enter valid marks 0-100 for all subjects.');
+    return;
+  }
+  const existing = findByName(name);
+  if(existing){ existing.CC = cc; existing.CN = cn; existing.DC = dc; }
+  else{ students.push({name, CC:cc, CN:cn, DC:dc}); }
+  filtered = null; // clear filters on save
+  renderTable();
+});
+
+$('reset').addEventListener('click', ()=>{
+  students = [
+    { name: 'Gargi', CC: 85, CN: 78, DC: 90 },
+    { name: 'Aarya', CC: 66, CN: 74, DC: 81 },
+    { name: 'Karan', CC: 92, CN: 88, DC: 80 },
+    { name: 'Jay',   CC: 55, CN: 60, DC: 58 },
+    { name: 'Krish', CC: 70, CN: 65, DC: 72 }
+  ];
+  filtered = null;
+  renderTable();
+});
+
+$('tbody').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const name = btn.dataset.name;
+  if(btn.dataset.action==='edit'){
+    const s = findByName(name);
+    $('name').value = s.name; $('cc').value = s.CC; $('cn').value = s.CN; $('dc').value = s.DC;
+  } else if(btn.dataset.action==='delete'){
+    students = students.filter(s=>s.name!==name);
+    filtered = null; renderTable();
+  }
+});
+
+// Sorting by header
+document.querySelectorAll('th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    sortDir = (sortKey===key)? -sortDir : 1;
+    sortKey = key; renderTable();
+  });
+});
+
+// Filters
+$('filterPassAll').addEventListener('click', ()=>{
+  filtered = students.filter(s=> s.CC>=PASS && s.CN>=PASS && s.DC>=PASS );
+  renderTable();
+});
+$('clearFilter').addEventListener('click', ()=>{ filtered = null; renderTable(); });
+
+$('deleteSelected').addEventListener('click', ()=>{
+  const selected = document.querySelector('input[name="sel"]:checked');
+  if(!selected) return alert('Select a row (radio on Name).');
+  const name = selected.dataset.name;
+  students = students.filter(s=>s.name!==name);
+  filtered = null; renderTable();
+});
+
+// Init
+renderTable();
+</script>
+</body>
+</html>

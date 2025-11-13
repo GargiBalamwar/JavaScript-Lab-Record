@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weather Dashboard</title>
+<style>
+  :root{
+    --bg:#0f172a;--panel:#0b1220;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--ring:rgba(56,189,248,.35);--accent:#38bdf8;--ok:#34d399;--warn:#f59e0b;--bad:#ef4444
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(70rem 70rem at 12% 8%,#0b1220,var(--bg));color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;display:grid;place-items:start;padding:20px}
+  .container{width:min(1200px,100%);margin-inline:auto;display:grid;gap:16px}
+  h1{margin:0;font-size:1.8rem}
+  .sub{margin:0;color:var(--muted)}
+  .panel{background:linear-gradient(180deg,#0f172a,#0a0f1f);border:1px solid #1f2937;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input,select{background:#0a1020;border:1px solid #1f2937;border-radius:12px;color:var(--text);padding:10px 12px;outline:none}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+  .btn{background:#0a1020;border:1px solid #1f2937;border-radius:12px;color:var(--text);padding:10px 12px;font-weight:700;cursor:pointer}
+  .btn.primary{background:linear-gradient(180deg,#0ea5e9,#0284c7);border-color:#0ea5e9}
+  .two{display:grid;grid-template-columns:2.1fr 1fr;gap:16px}
+  @media (max-width:1000px){.two{grid-template-columns:1fr}}
+  .metric{display:grid;gap:4px;background:#0a1020;border:1px solid #1f2937;border-radius:12px;padding:12px}
+  .metric .val{font-size:1.4rem;font-weight:800}
+  .big{display:grid;gap:8px}
+  .current{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+  .emoji{font-size:2.4rem}
+  .muted{color:var(--muted)}
+  .caps{font-variant:all-small-caps;letter-spacing:.06em}
+  .grid{display:grid;gap:12px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px;border-top:1px solid #1f2937;text-align:left}
+  th{color:#cbd5e1}
+  .pill{padding:3px 8px;border-radius:999px;font-weight:700;font-size:.8rem}
+  .pill.ok{color:var(--ok);border:1px solid rgba(52,211,153,.45);background:rgba(52,211,153,.12)}
+  .pill.bad{color:var(--bad);border:1px solid rgba(239,68,68,.45);background:rgba(239,68,68,.12)}
+  .pill.warn{color:var(--warn);border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.12)}
+  canvas{width:100%;height:260px;background:#0a1020;border:1px solid #1f2937;border-radius:12px}
+  .hint{color:var(--muted);font-size:.9rem}
+  .list{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+  @media (max-width:900px){.list{grid-template-columns:repeat(2,1fr)}}
+  .day{background:#0a1020;border:1px solid #1f2937;border-radius:12px;padding:10px;display:grid;gap:6px;text-align:center}
+  .day .d-emoji{font-size:1.6rem}
+  .loader{display:none}
+  .loader.show{display:inline-block; width:18px; height:18px; border:3px solid #1f2937; border-top-color:#38bdf8; border-radius:50%; animation:spin 0.9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <div class="container">
+    <header class="panel">
+      <div class="row" style="justify-content:space-between;align-items:end">
+        <div>
+          <h1>Weather Dashboard</h1>
+          <p class="sub">No API key needed (Open‑Meteo). Search any city, or use your location.</p>
+        </div>
+        <div class="row">
+          <label class="caps" for="unit">Units</label>
+          <select id="unit">
+            <option value="C">°C</option>
+            <option value="F">°F</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel grid">
+      <div class="row" style="align-items:center">
+        <input id="city" type="text" placeholder="Search city (e.g., Nagpur)" style="min-width:240px"/>
+        <button class="btn primary" id="search">Search</button>
+        <button class="btn" id="useGeo">Use My Location</button>
+        <span class="loader" id="loading"></span>
+      </div>
+      <p class="hint">Tips: Try multiple matches (dropdown appears). Toggle units to see client‑side conversions using <code>map</code>.</p>
+      <div id="suggestions" class="row" style="flex-wrap:wrap"></div>
+    </section>
+
+    <section class="two">
+      <div class="panel big" id="left">
+        <div class="current" id="currentBox" aria-live="polite">
+          <div class="emoji" id="currentEmoji">⛅</div>
+          <div>
+            <div style="font-weight:800;font-size:1.6rem" id="currentTemp">—</div>
+            <div class="muted" id="currentDesc">—</div>
+            <div class="muted" id="place">—</div>
+          </div>
+        </div>
+        <div class="row" style="gap:10px">
+          <div class="metric"><span class="muted caps">Feels like</span><span class="val" id="apparent">—</span></div>
+          <div class="metric"><span class="muted caps">Wind</span><span class="val" id="wind">—</span></div>
+          <div class="metric"><span class="muted caps">Humidity</span><span class="val" id="humid">—</span></div>
+          <div class="metric"><span class="muted caps">Visibility</span><span class="val" id="vis">—</span></div>
+        </div>
+        <div>
+          <canvas id="hourlyChart" width="900" height="260" aria-label="Hourly temperature"></canvas>
+          <p class="hint">Hourly temperature for next 24 hours. Rendered with plain Canvas. Uses <code>slice()</code>, <code>map()</code>, <code>reduce()</code>.</p>
+        </div>
+      </div>
+
+      <aside class="panel grid" id="right">
+        <h3 style="margin:0">7‑Day Forecast</h3>
+        <div id="forecast" class="list"></div>
+      </aside>
+    </section>
+
+    <footer class="panel hint">
+      Built to practice Arrays & Loops: <b>map</b> (unit conversions), <b>filter</b> (valid data), <b>reduce</b> (min/max/avg), <b>forEach</b> (render), and <b>slice</b> (subset hours). API: Open‑Meteo Geocoding + Forecast.
+    </footer>
+  </div>
+
+<script>
+// ==================== Helpers & Mappings ====================
+const $ = (id) => document.getElementById(id);
+const unitSel = $('unit');
+const loading = $('loading');
+let currentPlace = null; // {name, country, lat, lon}
+let latestWeather = null; // store last fetched payload for unit toggling
+
+const WMO = {
+  0:['Clear sky','☀️'],1:['Mainly clear','🌤️'],2:['Partly cloudy','⛅'],3:['Overcast','☁️'],
+  45:['Fog','🌫️'],48:['Depositing rime fog','🌫️'],
+  51:['Light drizzle','🌦️'],53:['Drizzle','🌦️'],55:['Dense drizzle','🌧️'],
+  56:['Freezing drizzle','🌧️'],57:['Freezing drizzle','🌧️'],
+  61:['Slight rain','🌧️'],63:['Rain','🌧️'],65:['Heavy rain','🌧️'],
+  66:['Freezing rain','🌧️'],67:['Freezing rain','🌧️'],
+  71:['Slight snow','🌨️'],73:['Snow','🌨️'],75:['Heavy snow','🌨️'],
+  77:['Snow grains','🌨️'],
+  80:['Rain showers','🌦️'],81:['Rain showers','🌦️'],82:['Violent rain showers','⛈️'],
+  85:['Snow showers','🌨️'],86:['Snow showers','🌨️'],
+  95:['Thunderstorm','⛈️'],96:['Thunderstorm w/ hail','⛈️'],99:['Thunderstorm w/ hail','⛈️']
+};
+
+function cToF(c){return (c*9/5)+32}
+function fToC(f){return (f-32)*5/9}
+function kmhToMph(k){return k*0.621371}
+function mToKm(m){return m/1000}
+
+function showLoader(on){loading.classList.toggle('show', !!on)}
+
+// ==================== Geocoding (no key) ====================
+async function geocode(name){
+  showLoader(true);
+  try{
+    const u = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=5&language=en&format=json`;
+    const r = await fetch(u);
+    const j = await r.json();
+    return (j.results || []).map(x => ({
+      name: x.name,
+      country: x.country,
+      admin: x.admin1 || '',
+      lat: x.latitude,
+      lon: x.longitude
+    }));
+  }catch(e){
+    console.error(e); return [];
+  }finally{ showLoader(false); }
+}
+
+function renderSuggestions(list){
+  const box = $('suggestions');
+  box.innerHTML = '';
+  if(!list.length){ box.innerHTML = '<span class="muted">No matches.</span>'; return; }
+  list.forEach((p,idx)=>{
+    const b = document.createElement('button');
+    b.className='btn';
+    b.textContent = `${p.name}${p.admin?`, ${p.admin}`:''} — ${p.country}`;
+    b.addEventListener('click', ()=> selectPlace(p));
+    box.appendChild(b);
+  })
+}
+
+// ==================== Forecast ====================
+async function fetchWeather(lat, lon){
+  showLoader(true);
+  try{
+    const u = new URL('https://api.open-meteo.com/v1/forecast');
+    u.search = new URLSearchParams({
+      latitude: lat, longitude: lon,
+      current: 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,visibility',
+      hourly: 'temperature_2m,relative_humidity_2m,visibility,precipitation_probability,wind_speed_10m',
+      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+      timezone: 'auto'
+    }).toString();
+    const r = await fetch(u);
+    if(!r.ok) throw new Error('Weather fetch failed');
+    const j = await r.json();
+    latestWeather = j; // cache
+    renderWeather(j);
+  }catch(e){
+    console.error(e);
+    alert('Could not fetch weather. Try another location.');
+  }finally{ showLoader(false); }
+}
+
+function selectPlace(p){
+  currentPlace = p;
+  $('place').textContent = `${p.name}${p.admin?`, ${p.admin}`:''}, ${p.country}`;
+  $('suggestions').innerHTML = '';
+  fetchWeather(p.lat, p.lon);
+}
+
+function applyUnits(valC){
+  const unit = unitSel.value;
+  if(valC == null || Number.isNaN(valC)) return '—';
+  return unit === 'C' ? `${valC.toFixed(1)}°C` : `${cToF(valC).toFixed(1)}°F`;
+}
+
+function renderWeather(j){
+  const unit = unitSel.value; // C or F
+  const cur = j.current;
+  const [desc, emoji] = WMO[cur.weather_code] || ['—','⛅'];
+  $('currentEmoji').textContent = emoji;
+  $('currentDesc').textContent = desc;
+  $('currentTemp').textContent = applyUnits(cur.temperature_2m);
+  $('apparent').textContent = applyUnits(cur.apparent_temperature);
+
+  // wind (API in km/h)
+  $('wind').textContent = unit==='C' ? `${cur.wind_speed_10m.toFixed(0)} km/h` : `${kmhToMph(cur.wind_speed_10m).toFixed(0)} mph`;
+  $('humid').textContent = `${cur.relative_humidity_2m ?? j.hourly.relative_humidity_2m?.[0] ?? '—'}%`;
+  const visKm = mToKm(cur.visibility ?? j.hourly.visibility?.[0] ?? NaN);
+  $('vis').textContent = Number.isFinite(visKm) ? `${visKm.toFixed(1)} km` : '—';
+
+  // 7-day forecast
+  const f = $('forecast');
+  f.innerHTML = '';
+  const days = j.daily.time; // ISO strings
+  const maxC = j.daily.temperature_2m_max;
+  const minC = j.daily.temperature_2m_min;
+  const wmo = j.daily.weather_code;
+  const pop = j.daily.precipitation_probability_max;
+
+  days.forEach((iso, i) => {
+    const d = new Date(iso);
+    const dayName = d.toLocaleDateString(undefined,{weekday:'short'});
+    const [dsc, ic] = WMO[wmo[i]] || ['—','⛅'];
+    const card = document.createElement('div');
+    card.className = 'day';
+    card.innerHTML = `
+      <div class="d-emoji">${ic}</div>
+      <div><b>${dayName}</b><div class="muted" style="font-size:.9rem">${dsc}</div></div>
+      <div><b>${unit==='C'?maxC[i].toFixed(0):cToF(maxC[i]).toFixed(0)}°</b> / <span class="muted">${unit==='C'?minC[i].toFixed(0):cToF(minC[i]).toFixed(0)}°</span></div>
+      <div class="muted">Rain: ${pop?.[i] ?? '—'}%</div>
+    `;
+    f.appendChild(card);
+  });
+
+  // Hourly chart next 24 hours
+  drawHourlyChart(j);
+}
+
+function drawHourlyChart(j){
+  const ctx = $('hourlyChart').getContext('2d');
+  ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+  const unit = unitSel.value;
+  // take next 24 hours starting from now index
+  const times = j.hourly.time.map(t => new Date(t));
+  const tempsC = j.hourly.temperature_2m;
+  const now = Date.now();
+  let startIdx = times.findIndex(t => t.getTime() >= now);
+  if(startIdx === -1) startIdx = 0;
+  const viewTimes = times.slice(startIdx, startIdx+24);
+  let viewTemps = tempsC.slice(startIdx, startIdx+24);
+  if(unit==='F') viewTemps = viewTemps.map(cToF); // map demo
+  // reduce to find min/max for scaling
+  const tMin = viewTemps.reduce((a,b)=>Math.min(a,b), +Infinity);
+  const tMax = viewTemps.reduce((a,b)=>Math.max(a,b), -Infinity);
+  // padding
+  const pad = 4; const W = ctx.canvas.width, H = ctx.canvas.height;
+  const left = 40, right = 10, top = 20, bottom = 26;
+  const w = W - left - right, h = H - top - bottom;
+  function x(i){return left + (i/(viewTemps.length-1))*w}
+  function y(t){return top + (1 - (t - tMin)/(tMax - tMin || 1))*h}
+
+  // axes
+  ctx.strokeStyle = '#223'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(left, top+h); ctx.lineTo(left+w, top+h); ctx.stroke();
+  // grid + labels every 6 hours
+  ctx.fillStyle = '#9fb'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  viewTimes.forEach((d,i)=>{
+    if(i%6===0){
+      ctx.fillStyle = '#445'; ctx.fillRect(x(i), top, 1, h);
+      ctx.fillStyle = '#9fb';
+      const label = d.toLocaleTimeString([], {hour:'numeric'});
+      ctx.fillText(label, x(i), top+h+16);
+    }
+  });
+  // temp labels (min/max)
+  ctx.textAlign='right';
+  ctx.fillText((unit==='C'?tMax.toFixed(0):tMax.toFixed(0)) + '°', left-6, y(tMax)-4);
+  ctx.fillText((unit==='C'?tMin.toFixed(0):tMin.toFixed(0)) + '°', left-6, y(tMin)+12);
+
+  // line
+  ctx.strokeStyle = '#6dd3ff'; ctx.lineWidth = 2.2; ctx.beginPath();
+  viewTemps.forEach((t,i)=>{ i?ctx.lineTo(x(i), y(t)):ctx.moveTo(x(i), y(t)); });
+  ctx.stroke();
+  // points
+  ctx.fillStyle = '#6dd3ff';
+  viewTemps.forEach((t,i)=>{ ctx.beginPath(); ctx.arc(x(i), y(t), 2.2, 0, Math.PI*2); ctx.fill(); });
+}
+
+// ==================== Events ====================
+$('search').addEventListener('click', async ()=>{
+  const q = $('city').value.trim();
+  if(!q) return;
+  renderSuggestions([]);
+  const res = await geocode(q);
+  renderSuggestions(res);
+});
+
+$('useGeo').addEventListener('click', ()=>{
+  if(!navigator.geolocation) return alert('Geolocation not supported');
+  showLoader(true);
+  navigator.geolocation.getCurrentPosition(async(pos)=>{
+    try{
+      const {latitude:lat, longitude:lon} = pos.coords;
+      // reverse geocode (approx) via same API using nearby=1 (not available), so we just show coords
+      currentPlace = {name:'My Location', country:'', admin:'', lat, lon};
+      $('place').textContent = 'My Location';
+      await fetchWeather(lat, lon);
+    }catch(e){console.error(e)}
+    finally{ showLoader(false); }
+  }, (err)=>{ showLoader(false); alert('Could not get location'); });
+});
+
+unitSel.addEventListener('change', ()=>{ if(latestWeather) renderWeather(latestWeather); });
+
+// Default: try a sample city
+selectPlace({name:'Nagpur', country:'India', admin:'Maharashtra', lat:21.1498, lon:79.0806});
+</script>
+</body>
+</html>
+
